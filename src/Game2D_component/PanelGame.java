@@ -1,6 +1,7 @@
 package Game2D_component;
 
 import Game2D_obj.Bullet;
+import Game2D_obj.Effect;
 import Game2D_obj.Monster;
 import Game2D_obj.Player;
 import java.awt.Color;
@@ -40,9 +41,10 @@ public class PanelGame extends JComponent {
     //Game Obj
     private Player player;
     private List<Bullet> bullets;
-    private  List<Monster> monster01;
-    private  List<Monster> monster02;
-    private  List<Monster> monster03;
+    private List<Monster> monster01;
+    private List<Monster> monster02;
+    private List<Monster> monster03;
+    private List<Effect> boomEffects;
 
     public void start() {
         width = getWidth();
@@ -75,36 +77,36 @@ public class PanelGame extends JComponent {
         initBullet();
         thread.start();
     }
-    
+
     //monster
-    private void addMonster(){
+    private void addMonster() {
         Random ran = new Random();
-        int locationY=ran.nextInt(height-50)+25;
+        int locationY = ran.nextInt(height - 50) + 25;
         Monster monster = new Monster();
-        monster.changeLocation(0,locationY);
+        monster.changeLocation(0, locationY);
         monster.changeAngle(0);
         monster01.add(monster);
-        monster02.add(monster);
-        monster03.add(monster);
-        int locationY2 = ran.nextInt(height-50)+25;
+
+        int locationY2 = ran.nextInt(height - 50) + 25;
         Monster monter2 = new Monster();
         monter2.changeLocation(width, locationY2);
         monter2.changeAngle(180);
         monster01.add(monter2);
-        monster02.add(monter2);
-        monster03.add(monter2);
+
     }
 
     private void initObjectGame() {
         player = new Player();
         player.changeLocation(150, 150);
-        monster01= new ArrayList<>();
-        monster02 = new ArrayList<>();
-        monster03 = new ArrayList<>();
+        monster01 = new ArrayList<>();
+        //monster02 = new ArrayList<>();
+        //monster03 = new ArrayList<>();
+        boomEffects = new ArrayList<>();
+
         new Thread(new Runnable() {
             @Override
             public void run() {
-                while(start){
+                while (start) {
                     addMonster();
                     sleep(3000);
                 }
@@ -182,14 +184,14 @@ public class PanelGame extends JComponent {
                     }
                     player.update();
                     player.changeAngle(angle);
-                    
-                    for(int i =0;i < monster01.size(); i++){
-                        Monster monster1 = monster01.get(i);                        
-                        if( monster1!= null){
+
+                    for (int i = 0; i < monster01.size(); i++) {
+                        Monster monster1 = monster01.get(i);
+                        if (monster1 != null) {
                             monster1.update();
-                            if(!monster1.check(width, height)){
+                            if (!monster1.check(width, height)) {
                                 monster01.remove(monster1);
-                                
+
                                 //test
                                 //System.out.println("remove monster...");
                             }
@@ -207,7 +209,7 @@ public class PanelGame extends JComponent {
 //                            monster3.update();
 //                        }
 //                    }
-                    
+
                     sleep(5);
                 }
             }
@@ -233,21 +235,35 @@ public class PanelGame extends JComponent {
                             bullets.remove(bullet);
                         }
                     }
+                    for (int i = 0; i < boomEffects.size(); i++) {
+                        Effect boomEffect = boomEffects.get(i);
+                        if (boomEffect != null) {
+                            boomEffect.update();
+                            if (!boomEffect.check()) {
+                                boomEffects.remove(boomEffect);
+                            }
+                        } else {
+                            boomEffects.remove(boomEffect);
+                        }
+                    }
                     sleep(1);
                 }
             }
         }).start();
     }
-    
+
     //check shooter monster
-    private void checkBullets(Bullet bullet){
-        for(int i= 0; i<monster01.size();i++){
+    private void checkBullets(Bullet bullet) {
+        for (int i = 0; i < monster01.size(); i++) {
             Monster monster = monster01.get(i);
-            if(monster!=null){
+            if (monster != null) {
                 Area area = new Area(bullet.getShape());
                 area.intersect(monster.getShape());
-                if(!area.isEmpty()){
-                    monster01.remove(monster);
+                
+                if (!area.isEmpty()) {
+                    boomEffects.add(new Effect(bullet.getCenterX(), bullet.getCenterY(), 3, 5, 60, 0.5f, new Color(230, 207, 105)));
+
+                    //monster01.remove(monster);
                     bullets.remove(bullet);
                 }
             }
@@ -268,9 +284,9 @@ public class PanelGame extends JComponent {
                 bullet.draw(g2);
             }
         }
-        for(int i = 0; i<monster01.size();i++){
+        for (int i = 0; i < monster01.size(); i++) {
             Monster monster = monster01.get(i);
-            if(monster != null){
+            if (monster != null) {
                 monster.draw(g2);
             }
         }
@@ -286,6 +302,13 @@ public class PanelGame extends JComponent {
 //                monster.draw(g2);
 //            }
 //        }
+
+        for (int i = 0; i < boomEffects.size(); i++) {
+            Effect boomEffect = boomEffects.get(i);
+            if (boomEffect != null) {
+                boomEffect.draw(g2);
+            }
+        }
     }
 
     private void render() {
