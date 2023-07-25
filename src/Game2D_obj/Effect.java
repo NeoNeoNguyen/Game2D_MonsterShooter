@@ -37,7 +37,7 @@ public class Effect {
         booms = new Boom[totalEffect];
         float per = 360f / totalEffect;
         Random ran = new Random();
-        for (int i = 0; i <= totalEffect; i++) {
+        for (int i = 1; i <= totalEffect; i++) {
             int r = ran.nextInt((int) per) + 1;
             int boomSize = ran.nextInt(max_size) + 1;
             float angle = i * per + r;
@@ -46,10 +46,11 @@ public class Effect {
     }
 
     public void draw(Graphics2D g2) {
-        AffineTransform oldTransform = new AffineTransform();
+        AffineTransform oldTransform = g2.getTransform();
         Composite oldComposite = g2.getComposite();
         g2.setColor(color);
         g2.translate(x, y);
+        
         for (Boom b : booms) {
             double bx = Math.cos(Math.toRadians(b.getAngle())) * current_distance;
             double by = Math.sin(Math.toRadians(b.getAngle())) * current_distance;
@@ -66,15 +67,16 @@ public class Effect {
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
             g2.fill(new Rectangle2D.Double(bx - space, by - space, boomSize, boomSize));
         }
+        
         g2.setComposite(oldComposite);
         g2.setTransform(oldTransform);
     }
-    
-    public void update(){
-        current_distance+=speed;
+
+    public void update() {
+        current_distance += speed;
     }
-    
-    public boolean check(){
+
+    public boolean check() {
         return current_distance < max_distance;
     }
 }

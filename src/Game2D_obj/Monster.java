@@ -10,9 +10,10 @@ import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import javax.swing.ImageIcon;
 
-public class Monster {
+public class Monster extends HpRender{
 
     public Monster() {
+        super(new HP(20, 20));
         this.mt1 = new ImageIcon(getClass().getResource("/Game2D_image/moster01.png")).getImage();
         //this.mt2 = new ImageIcon(getClass().getResource("/Game2D_image/moster02.png")).getImage();
         //this.mt3 = new ImageIcon(getClass().getResource("/Game2D_image/moster03.png")).getImage();
@@ -66,12 +67,15 @@ public class Monster {
 
         Shape shap = getShape();
 
+        //HP
+        hpRender(g2, shap, y);
+        
         g2.setTransform(oldTransform);
 
         //test
-        g2.setColor(Color.red);
-        g2.draw(shap);
-        g2.draw(shap.getBounds2D());
+//        g2.setColor(Color.red);
+//        g2.draw(shap);
+//        g2.draw(shap.getBounds2D());
 
     }
 

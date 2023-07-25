@@ -5,6 +5,8 @@ import Game2D_obj.Effect;
 import Game2D_obj.Monster;
 import Game2D_obj.Player;
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -12,6 +14,7 @@ import java.awt.RenderingHints;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Area;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +48,7 @@ public class PanelGame extends JComponent {
     private List<Monster> monster02;
     private List<Monster> monster03;
     private List<Effect> boomEffects;
+    private int score = 0;
 
     public void start() {
         width = getWidth();
@@ -114,6 +118,14 @@ public class PanelGame extends JComponent {
         }).start();
     }
 
+    private void resetGame() {
+        monster01.clear();
+        bullets.clear();
+        player.changeLocation(150, 150);
+        player.reset();
+        score = 0;
+    }
+
     //key
     private void initKeyboard() {
         key = new Key();
@@ -131,6 +143,8 @@ public class PanelGame extends JComponent {
                     key.setKey_j(true);
                 } else if (e.getKeyCode() == KeyEvent.VK_K) {
                     key.setKey_k(true);
+                } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    key.setKey_enter(true);
                 }
             }
 
@@ -145,6 +159,8 @@ public class PanelGame extends JComponent {
                     key.setKey_j(false);
                 } else if (e.getKeyCode() == KeyEvent.VK_K) {
                     key.setKey_k(false);
+                } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    key.setKey_enter(false);
                 }
             }
         });
@@ -153,37 +169,43 @@ public class PanelGame extends JComponent {
             public void run() {
                 float s = 0.5f;
                 while (start) {
-                    float angle = player.getAngle();
-                    if (key.isKey_left()) {
-                        angle -= s;
-                    }
-                    if (key.isKey_right()) {
-                        angle += s;
-                    }
-
-                    if (key.isKey_j() || key.isKey_k()) {
-                        if (shotTime == 0) {
-                            if (key.isKey_j()) {
-                                bullets.add(0, new Bullet(player.getX(), player.getY(), player.getAngle(), 5, 3f));
-                            } else {
-                                bullets.add(0, new Bullet(player.getX(), player.getY(), player.getAngle(), 20, 3f));
-                            }
+                    if (player.isAlive()) {
+                        float angle = player.getAngle();
+                        if (key.isKey_left()) {
+                            angle -= s;
                         }
-                        shotTime++;
-                        if (shotTime == 15) {
+                        if (key.isKey_right()) {
+                            angle += s;
+                        }
+
+                        if (key.isKey_j() || key.isKey_k()) {
+                            if (shotTime == 0) {
+                                if (key.isKey_j()) {
+                                    bullets.add(0, new Bullet(player.getX(), player.getY(), player.getAngle(), 5, 3f));
+                                } else {
+                                    bullets.add(0, new Bullet(player.getX(), player.getY(), player.getAngle(), 20, 3f));
+                                }
+                            }
+                            shotTime++;
+                            if (shotTime == 15) {
+                                shotTime = 0;
+                            }
+                        } else {
                             shotTime = 0;
                         }
-                    } else {
-                        shotTime = 0;
-                    }
 
-                    if (key.isKey_space()) {
-                        player.speedUp();
+                        if (key.isKey_space()) {
+                            player.speedUp();
+                        } else {
+                            player.speedDown();
+                        }
+                        player.update();
+                        player.changeAngle(angle);
                     } else {
-                        player.speedDown();
+                        if (key.isKey_enter()) {
+                            resetGame();
+                        }
                     }
-                    player.update();
-                    player.changeAngle(angle);
 
                     for (int i = 0; i < monster01.size(); i++) {
                         Monster monster1 = monster01.get(i);
@@ -191,9 +213,10 @@ public class PanelGame extends JComponent {
                             monster1.update();
                             if (!monster1.check(width, height)) {
                                 monster01.remove(monster1);
-
-                                //test
-                                //System.out.println("remove monster...");
+                            } else {
+                                if (player.isAlive()) {
+                                    checkPlayer(monster1);
+                                }
                             }
                         }
                     }
@@ -235,6 +258,7 @@ public class PanelGame extends JComponent {
                             bullets.remove(bullet);
                         }
                     }
+                    //Them effect 
                     for (int i = 0; i < boomEffects.size(); i++) {
                         Effect boomEffect = boomEffects.get(i);
                         if (boomEffect != null) {
@@ -259,12 +283,52 @@ public class PanelGame extends JComponent {
             if (monster != null) {
                 Area area = new Area(bullet.getShape());
                 area.intersect(monster.getShape());
-                
+
                 if (!area.isEmpty()) {
                     boomEffects.add(new Effect(bullet.getCenterX(), bullet.getCenterY(), 3, 5, 60, 0.5f, new Color(230, 207, 105)));
+                    if (!monster.updateHP(bullet.getSize())) { //Test HP
+                        score++;
+                        monster01.remove(monster);
+                        double x = monster.getX() + monster.MONSTER_SIZE / 2;
+                        double y = monster.getX() + monster.MONSTER_SIZE / 2;
+                        boomEffects.add(new Effect(x, y, 5, 5, 75, 0.05f, new Color(32, 178, 169)));
+                        boomEffects.add(new Effect(x, y, 5, 5, 75, 1, new Color(32, 178, 169)));
+                        boomEffects.add(new Effect(x, y, 10, 10, 100, 0.3f, new Color(203, 207, 105)));
+                        boomEffects.add(new Effect(x, y, 10, 5, 100, 0.5f, new Color(255, 255, 70)));
+                        boomEffects.add(new Effect(x, y, 10, 5, 150, 0.2f, new Color(255, 255, 255)));
+                    }
 
-                    //monster01.remove(monster);
                     bullets.remove(bullet);
+                }
+            }
+        }
+    }
+
+    private void checkPlayer(Monster monster) {
+        if (monster != null) {
+            Area area = new Area(player.getShape());
+            area.intersect(monster.getShape());
+            if (!area.isEmpty()) {
+                double monterHp = monster.getHP();
+                if (!monster.updateHP(player.getHP())) {
+                    monster01.remove(monster);
+                    double x = monster.getX() + monster.MONSTER_SIZE / 2;
+                    double y = monster.getX() + monster.MONSTER_SIZE / 2;
+                    boomEffects.add(new Effect(x, y, 5, 5, 75, 0.05f, new Color(32, 178, 169)));
+                    boomEffects.add(new Effect(x, y, 5, 5, 75, 1, new Color(32, 178, 169)));
+                    boomEffects.add(new Effect(x, y, 10, 10, 100, 0.3f, new Color(203, 207, 105)));
+                    boomEffects.add(new Effect(x, y, 10, 5, 100, 0.5f, new Color(255, 255, 70)));
+                    boomEffects.add(new Effect(x, y, 10, 5, 150, 0.2f, new Color(255, 255, 255)));
+                }
+                if (!player.updateHP(monterHp)) {
+                    player.setAlive(false);
+                    double x = player.getX() + player.PLAYER_SIZE / 2;
+                    double y = player.getX() + player.PLAYER_SIZE / 2;
+                    boomEffects.add(new Effect(x, y, 5, 5, 75, 0.05f, new Color(32, 178, 169)));
+                    boomEffects.add(new Effect(x, y, 5, 5, 75, 1, new Color(32, 178, 169)));
+                    boomEffects.add(new Effect(x, y, 10, 10, 100, 0.3f, new Color(203, 207, 105)));
+                    boomEffects.add(new Effect(x, y, 10, 5, 100, 0.5f, new Color(255, 255, 70)));
+                    boomEffects.add(new Effect(x, y, 10, 5, 150, 0.2f, new Color(255, 255, 255)));
                 }
             }
         }
@@ -277,7 +341,9 @@ public class PanelGame extends JComponent {
     }
 
     private void drawGame() {
-        player.draw(g2);
+        if (player.isAlive()) {
+            player.draw(g2);
+        }
         for (int i = 0; i < bullets.size(); i++) {
             Bullet bullet = bullets.get(i);
             if (bullet != null) {
@@ -308,6 +374,31 @@ public class PanelGame extends JComponent {
             if (boomEffect != null) {
                 boomEffect.draw(g2);
             }
+        }
+
+        g2.setColor(Color.white);
+        g2.setFont(getFont().deriveFont(Font.BOLD, 15f));
+        g2.drawString("Score: " + score, 10, 20);
+
+        if (!player.isAlive()) {
+            String text = "GAME OVER";
+            String textKey = "Press key enter to Continue ...";
+            g2.setFont(getFont().deriveFont(Font.BOLD, 50f));
+            FontMetrics fm = g2.getFontMetrics();
+            Rectangle2D r2 = fm.getStringBounds(text, g2);
+            double textWidth = r2.getWidth();
+            double textHeight = r2.getHeight();
+            double x = (width - textWidth) / 2;
+            double y = (height - textHeight) / 2;
+            g2.drawString(text, (int) x, (int) y + fm.getAscent());
+            g2.setFont(getFont().deriveFont(Font.BOLD, 15f));
+            fm = g2.getFontMetrics();
+            r2 = fm.getStringBounds(textKey, g2);
+            textWidth = r2.getWidth();
+            textHeight = r2.getHeight();
+            x = (width - textWidth) / 2;
+            y = (height - textHeight) / 2;
+            g2.drawString(textKey, (int) x, (int) y + fm.getAscent() + 50);
         }
     }
 
