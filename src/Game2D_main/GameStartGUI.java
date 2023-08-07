@@ -11,6 +11,8 @@ import java.util.List;
 
 public class GameStartGUI extends JFrame {
 
+    private Player currentPlayer; // Thông tin người chơi đang đăng nhập
+
     public GameStartGUI() {
         initUI();
     }
@@ -32,19 +34,61 @@ public class GameStartGUI extends JFrame {
 
         playButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                // Mở cửa sổ trò chơi sau khi nhấn nút "Play Game"
-                dispose(); // Đóng cửa sổ hiện tại
-                PanelGame panelGame = new PanelGame();
-                JFrame gameFrame = new JFrame();
-                gameFrame.add(panelGame);
-                gameFrame.setSize(1366, 768);
-                gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                gameFrame.setVisible(true);
-                gameFrame.setLocationRelativeTo(null);
-                panelGame.start();
+                if (currentPlayer != null) {
+                    // Mở cửa sổ trò chơi sau khi nhấn nút "Play Game"
+                    dispose(); // Đóng cửa sổ hiện tại
+                    PanelGame panelGame = new PanelGame(currentPlayer); // Truyền thông tin người chơi
+                    JFrame gameFrame = new JFrame();
+                    gameFrame.add(panelGame);
+                    gameFrame.setSize(1366, 768);
+                    gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    gameFrame.setVisible(true);
+                    gameFrame.setLocationRelativeTo(null);
+                    panelGame.start();
+                } else {
+                    // Người chơi chưa đăng nhập, hiển thị cửa sổ trò chơi không lưu trữ
+                    dispose(); // Đóng cửa sổ hiện tại
+                    PanelGame panelGame = new PanelGame(null); // Truyền null khi không có người chơi
+                    JFrame gameFrame = new JFrame();
+                    gameFrame.add(panelGame);
+                    gameFrame.setSize(1366, 768);
+                    gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    gameFrame.setVisible(true);
+                    gameFrame.setLocationRelativeTo(null);
+                    panelGame.start();
+                }
             }
         });
 
+//        loginButton.addActionListener(new ActionListener() {
+//            public void actionPerformed(ActionEvent e) {
+//                // Hiển thị cửa sổ đăng nhập
+//                String username = JOptionPane.showInputDialog(GameStartGUI.this, "Enter your username:");
+//                String password = JOptionPane.showInputDialog(GameStartGUI.this, "Enter your password:");
+//
+//                // Kiểm tra đăng nhập
+//                if (PlayerScore.login(username, password)) {
+//                    // Đăng nhập thành công, hiển thị cửa sổ trò chơi
+//                    dispose();
+////                    PanelGame panelGame = new PanelGame();
+//                    PanelGame panelGame;
+//                    if (currentPlayer != null) {
+//                        panelGame = new PanelGame(currentPlayer);
+//                    } else {
+//                        panelGame = new PanelGame(null);
+//                    }
+//                    JFrame gameFrame = new JFrame();
+//                    gameFrame.add(panelGame);
+//                    gameFrame.setSize(1366, 768);
+//                    gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//                    gameFrame.setVisible(true);
+//                    gameFrame.setLocationRelativeTo(null);
+//                    panelGame.start();
+//                } else {
+//                    JOptionPane.showMessageDialog(GameStartGUI.this, "Invalid username or password. Please try again.", "Login Failed", JOptionPane.ERROR_MESSAGE);
+//                }
+//            }
+//        });
         loginButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 // Hiển thị cửa sổ đăng nhập
@@ -53,9 +97,15 @@ public class GameStartGUI extends JFrame {
 
                 // Kiểm tra đăng nhập
                 if (PlayerScore.login(username, password)) {
+                    // Lấy thông tin người chơi từ cơ sở dữ liệu
+                    Player currentPlayer = PlayerScore.getPlayerInfo(username);
+
+                    // Gán thông tin người chơi vào biến currentPlayer
+                    GameStartGUI.this.currentPlayer = currentPlayer;
+
                     // Đăng nhập thành công, hiển thị cửa sổ trò chơi
                     dispose();
-                    PanelGame panelGame = new PanelGame();
+                    PanelGame panelGame = new PanelGame(currentPlayer); // Truyền thông tin người chơi
                     JFrame gameFrame = new JFrame();
                     gameFrame.add(panelGame);
                     gameFrame.setSize(1366, 768);

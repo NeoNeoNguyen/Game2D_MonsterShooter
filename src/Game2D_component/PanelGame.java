@@ -1,5 +1,8 @@
 package Game2D_component;
 
+import Game2D_data.PlayerScore;
+import static Game2D_data.PlayerScore.addScore;
+import Game2D_data.Score;
 import Game2D_obj.Bullet;
 import Game2D_obj.Effect;
 import Game2D_obj.Monster;
@@ -24,13 +27,17 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 
 public class PanelGame extends JComponent {
 
     //private Image image;
     private Graphics2D g2;
     private BufferedImage image;
-
     private int width;
     private int height;
     private Thread thread;
@@ -51,6 +58,23 @@ public class PanelGame extends JComponent {
     //private List<Monster> monster03;
     private List<Effect> boomEffects;
     private int score = 0;
+    private String playerName;
+
+    private Player currentPlayer; // Thông tin người chơi đang đăng nhập
+    private int playerScore; // Điểm số của người chơi
+
+    public void setPlayerName(String playerName) {
+        this.playerName = playerName;
+    }
+
+    public PanelGame(Player currentPlayer) {
+        this.currentPlayer = currentPlayer;
+    }
+
+    public PanelGame(Player currentPlayer, int playerScore) { // Thêm tham số playerScore vào constructor
+        this.currentPlayer = currentPlayer;
+        this.playerScore = playerScore; // Lưu playerScore
+    }
 
     public void start() {
         width = getWidth();
@@ -127,6 +151,7 @@ public class PanelGame extends JComponent {
         player.changeLocation(150, 150);
         player.reset();
         score = 0;
+        playerScore = 0;
     }
 
     //key
@@ -301,7 +326,7 @@ public class PanelGame extends JComponent {
                         boomEffects.add(new Effect(x, y, 10, 10, 100, 0.3f, new Color(203, 207, 105)));
                         boomEffects.add(new Effect(x, y, 10, 5, 100, 0.5f, new Color(255, 255, 70)));
                         boomEffects.add(new Effect(x, y, 10, 5, 150, 0.2f, new Color(255, 255, 255)));
-                    } else{
+                    } else {
                         sound.soundHit();
                     }
 
@@ -331,25 +356,48 @@ public class PanelGame extends JComponent {
                 if (!player.updateHP(monterHp)) {
                     player.setAlive(false);
                     sound.soundDestroy();
-                    double x = player.getX() + player.PLAYER_SIZE / 2;
-                    double y = player.getX() + player.PLAYER_SIZE / 2;
-                    boomEffects.add(new Effect(x, y, 5, 5, 75, 0.05f, new Color(32, 178, 169)));
-                    boomEffects.add(new Effect(x, y, 5, 5, 75, 1, new Color(32, 178, 169)));
-                    boomEffects.add(new Effect(x, y, 10, 10, 100, 0.3f, new Color(203, 207, 105)));
-                    boomEffects.add(new Effect(x, y, 10, 5, 100, 0.5f, new Color(255, 255, 70)));
-                    boomEffects.add(new Effect(x, y, 10, 5, 150, 0.2f, new Color(255, 255, 255)));
+                    // Lưu điểm số của người chơi đăng nhập vào cơ sở dữ liệu
+                    if (currentPlayer != null) {
+                        playerScore = score;
+//                        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/monster_shooter", "root", "")) {
+//                            String insertQuery = "INSERT INTO score (phone_number, score) VALUES (?, ?)";
+//                            try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+//                                preparedStatement.setInt(1, currentPlayer.getPhone_number());
+//                                preparedStatement.setInt(2, playerScore);
+//                                preparedStatement.executeUpdate();
+//                            }
+//                        } catch (SQLException e) {
+//                            e.printStackTrace();
+//                        }
+                        Score score = new Score(
+                                new Timestamp(System.currentTimeMillis()).toString(),
+                                currentPlayer.getPhone_number(),
+                                playerScore,
+                                "0" // Thời gian chưa được xử lý ở mã của bạn, bạn cần cập nhật đúng giá trị thời gian ở đây
+                        );
+                        PlayerScore.addScore(score);
+
+                        double x = player.getX() + player.PLAYER_SIZE / 2;
+                        double y = player.getX() + player.PLAYER_SIZE / 2;
+                        boomEffects.add(new Effect(x, y, 5, 5, 75, 0.05f, new Color(32, 178, 169)));
+                        boomEffects.add(new Effect(x, y, 5, 5, 75, 1, new Color(32, 178, 169)));
+                        boomEffects.add(new Effect(x, y, 10, 10, 100, 0.3f, new Color(203, 207, 105)));
+                        boomEffects.add(new Effect(x, y, 10, 5, 100, 0.5f, new Color(255, 255, 70)));
+                        boomEffects.add(new Effect(x, y, 10, 5, 150, 0.2f, new Color(255, 255, 255)));
+                    }
                 }
             }
         }
     }
-
     //Game background
+
     private void drawBackground() {
         g2.setColor(new Color(30, 30, 30));
         g2.fillRect(0, 0, width, height);
     }
 
     private void drawGame() {
+        
         if (player.isAlive()) {
             player.draw(g2);
         }
@@ -387,13 +435,23 @@ public class PanelGame extends JComponent {
 
         g2.setColor(Color.white);
         g2.setFont(getFont().deriveFont(Font.BOLD, 15f));
-        g2.drawString("Score: " + score, 10, 20);
+        g2.drawString("Score: " + score, 10, 40);
+
+        // Vẽ tên người chơi bên trên bên trái màn hình
+        g2.setColor(Color.white);
+        g2.setFont(getFont().deriveFont(Font.BOLD, 15f));
+        FontMetrics fm = g2.getFontMetrics();
+        fm = g2.getFontMetrics();
+        String playerNameText = "Player: " + playerName;
+        g2.drawString(playerNameText, 10, 20); // Vị trí (10, 30) là một ví dụ, bạn có thể thay đổi vị trí tùy ý.
+        
+        
 
         if (!player.isAlive()) {
             String text = "GAME OVER";
             String textKey = "Press key enter to Continue ...";
             g2.setFont(getFont().deriveFont(Font.BOLD, 50f));
-            FontMetrics fm = g2.getFontMetrics();
+            //FontMetrics fm = g2.getFontMetrics();
             Rectangle2D r2 = fm.getStringBounds(text, g2);
             double textWidth = r2.getWidth();
             double textHeight = r2.getHeight();
@@ -408,6 +466,21 @@ public class PanelGame extends JComponent {
             x = (width - textWidth) / 2;
             y = (height - textHeight) / 2;
             g2.drawString(textKey, (int) x, (int) y + fm.getAscent() + 50);
+
+            // Trước khi vẽ điểm số, vẽ một vùng màu trắng tạm thời
+//            g2.setColor(Color.white);
+//            g2.fillRect(0, 0, width, height);
+            // Vẽ điểm số
+            String scoreText = "Your Score: " + score;
+            g2.setFont(getFont().deriveFont(Font.BOLD, 20f));
+            fm = g2.getFontMetrics();
+            r2 = fm.getStringBounds(scoreText, g2);
+            textWidth = r2.getWidth();
+            textHeight = r2.getHeight();
+            x = (width - textWidth) / 2;
+            y = (height - textHeight) / 2;
+            g2.setColor(Color.white); // Đảm bảo vùng vẽ có màu khác màu trắng để có thể nhìn thấy
+            g2.drawString(scoreText, (int) x, (int) y + fm.getAscent() + 100);
         }
     }
 
@@ -423,5 +496,9 @@ public class PanelGame extends JComponent {
         } catch (InterruptedException ex) {
             System.err.println(ex);
         }
+    }
+
+    public int getPlayerScore() {
+        return playerScore;
     }
 }

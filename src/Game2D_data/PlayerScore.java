@@ -11,22 +11,21 @@ public class PlayerScore {
     private static final String DB_USER = "root";
     private static final String DB_PASSWORD = "";
 
-    public static void addScore(String phoneNumber, int score, int timeInSeconds) {
-        try {
-            Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-            String insertQuery = "INSERT INTO score (create_time, phone_number, score, time) VALUES (?, ?, ?, ?)";
-            PreparedStatement preparedStatement = conn.prepareStatement(insertQuery);
-            preparedStatement.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
-            preparedStatement.setString(2, phoneNumber);
-            preparedStatement.setInt(3, score);
-            preparedStatement.setInt(4, timeInSeconds);
-            preparedStatement.executeUpdate();
-            conn.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
+//    public static void addScore(String phoneNumber, int score, int timeInSeconds) {
+//        try {
+//            Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+//            String insertQuery = "INSERT INTO score (create_time, phone_number, score, time) VALUES (?, ?, ?, ?)";
+//            PreparedStatement preparedStatement = conn.prepareStatement(insertQuery);
+//            preparedStatement.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
+//            preparedStatement.setString(2, phoneNumber);
+//            preparedStatement.setInt(3, score);
+//            preparedStatement.setInt(4, timeInSeconds);
+//            preparedStatement.executeUpdate();
+//            conn.close();
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+//    }
     public static List<ScoreInfo> getLeaderboard() {
         List<ScoreInfo> leaderboard = new ArrayList<>();
         try {
@@ -75,40 +74,55 @@ public class PlayerScore {
     }
 
     public static boolean register(Player player) {
-    try {
-        Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+        try {
+            Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
 
-        // Kiểm tra xem phone_number đã tồn tại trong cơ sở dữ liệu chưa
-        String checkQuery = "SELECT COUNT(*) FROM player WHERE phone_number = ?";
-        PreparedStatement checkStatement = conn.prepareStatement(checkQuery);
-        checkStatement.setInt(1, player.getPhone_number()); // Sử dụng getPhone_number() của đối tượng Player
-        ResultSet checkResult = checkStatement.executeQuery();
-        checkResult.next();
-        int count = checkResult.getInt(1);
-        if (count > 0) {
+            // Kiểm tra xem phone_number đã tồn tại trong cơ sở dữ liệu chưa
+            String checkQuery = "SELECT COUNT(*) FROM player WHERE phone_number = ?";
+            PreparedStatement checkStatement = conn.prepareStatement(checkQuery);
+            checkStatement.setInt(1, player.getPhone_number()); // Sử dụng getPhone_number() của đối tượng Player
+            ResultSet checkResult = checkStatement.executeQuery();
+            checkResult.next();
+            int count = checkResult.getInt(1);
+            if (count > 0) {
+                conn.close();
+                return false; // phone number đã tồn tại, không thể đăng ký
+            }
+
+            // Thêm thông tin người chơi mới vào cơ sở dữ liệu
+            String insertQuery = "INSERT INTO player (name, password, phone_number, highest_score, create_date) VALUES (?, ?, ?, ?, ?)";
+            PreparedStatement insertStatement = conn.prepareStatement(insertQuery);
+            insertStatement.setString(1, player.getName()); // Sử dụng getName() của đối tượng Player
+            insertStatement.setString(2, player.getPassword()); // Sử dụng getPassword() của đối tượng Player
+            insertStatement.setInt(3, player.getPhone_number()); // Sử dụng getPhone_number() của đối tượng Player
+            insertStatement.setInt(4, player.getHighest_score()); // Sử dụng getHighest_score() của đối tượng Player
+            insertStatement.setString(5, player.getCreate_date()); // Sử dụng getCreate_date() của đối tượng Player
+            insertStatement.executeUpdate();
+
             conn.close();
-            return false; // phone number đã tồn tại, không thể đăng ký
+            return true; // Đăng ký thành công
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false; // Xảy ra lỗi khi thực hiện đăng ký
         }
-
-        // Thêm thông tin người chơi mới vào cơ sở dữ liệu
-        String insertQuery = "INSERT INTO player (name, password, phone_number, highest_score, create_date) VALUES (?, ?, ?, ?, ?)";
-        PreparedStatement insertStatement = conn.prepareStatement(insertQuery);
-        insertStatement.setString(1, player.getName()); // Sử dụng getName() của đối tượng Player
-        insertStatement.setString(2, player.getPassword()); // Sử dụng getPassword() của đối tượng Player
-        insertStatement.setInt(3, player.getPhone_number()); // Sử dụng getPhone_number() của đối tượng Player
-        insertStatement.setInt(4, player.getHighest_score()); // Sử dụng getHighest_score() của đối tượng Player
-        insertStatement.setString(5, player.getCreate_date()); // Sử dụng getCreate_date() của đối tượng Player
-        insertStatement.executeUpdate();
-
-        conn.close();
-        return true; // Đăng ký thành công
-
-    } catch (SQLException e) {
-        e.printStackTrace();
-        return false; // Xảy ra lỗi khi thực hiện đăng ký
     }
-}
 
+    public static void addScore(Score score) {
+        try {
+            Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+            String insertQuery = "INSERT INTO score (create_time, phone_number, score, time) VALUES (?, ?, ?, ?)";
+            PreparedStatement preparedStatement = conn.prepareStatement(insertQuery);
+            preparedStatement.setString(1, score.getCreate_time()); // Sử dụng getName() của đối tượng Player
+            preparedStatement.setInt(2, score.getPhone_number()); // Sử dụng getPassword() của đối tượng Player
+            preparedStatement.setInt(3, score.getScore()); // Sử dụng getPhone_number() của đối tượng Player
+            preparedStatement.setString(4, score.getTime()); // Sử dụng getHighest_score() của đối tượng Player  
+            preparedStatement.executeUpdate();
+            conn.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     public static class ScoreInfo {
 
@@ -133,5 +147,51 @@ public class PlayerScore {
         public int getPlayerTime() {
             return playerTime;
         }
+
+    }
+
+    public static Player getPlayerInfo(String username) {
+        Player player = null;
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            // Kết nối tới cơ sở dữ liệu và thực hiện truy vấn
+            Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+
+            String query = "SELECT * FROM players WHERE name = ?";
+            statement = conn.prepareStatement(query);
+            statement.setString(1, username);
+            resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                // Tạo đối tượng Player và gán thông tin từ kết quả truy vấn
+                player = new Player();
+                player.setName(resultSet.getString("name"));
+                player.setPhone_number(resultSet.getString("phone_number"));
+                player.setPassword(resultSet.getString("password"));
+                // ... Gán các thông tin khác tương ứng
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            // Đóng kết nối và tài nguyên
+            try {
+                if (resultSet != null) {
+                    resultSet.close();
+                }
+                if (statement != null) {
+                    statement.close();
+                }
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return player;
     }
 }
