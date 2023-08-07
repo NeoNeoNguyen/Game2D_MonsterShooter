@@ -10,6 +10,13 @@ import javax.swing.ImageIcon;
 
 public class Player extends HpRender {
 
+    long id;
+    String name;
+    int phone_number;
+    String password;
+    int highest_score;
+    String create_date;
+
     public Player() {
         super(new HP(50, 50));
         this.image = new ImageIcon(getClass().getResource("/Game2D_image/player.png")).getImage();
@@ -127,4 +134,54 @@ public class Player extends HpRender {
         angle = 0;
         speed = 0;
     }
+
+    //data
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getPhone_number() {
+        return phone_number;
+    }
+
+    public void setPhone_number(String phone) {
+        this.phone_number = (int) Long.parseLong(phone);
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public int getHighest_score() {
+        return highest_score;
+    }
+
+    public void setHighest_score(int highest_score) {
+        this.highest_score = highest_score;
+    }
+
+    public String getCreate_date() {
+        return create_date;
+    }
+
+    public void setCreate_date(String create_date) {
+        this.create_date = create_date;
+    }
+
 }

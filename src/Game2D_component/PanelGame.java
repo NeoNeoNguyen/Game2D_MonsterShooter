@@ -4,6 +4,7 @@ import Game2D_obj.Bullet;
 import Game2D_obj.Effect;
 import Game2D_obj.Monster;
 import Game2D_obj.Player;
+import Game2D_sound.Sound;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -42,11 +43,12 @@ public class PanelGame extends JComponent {
     private final int TARGET_TIME = 1000000000 / FPS;
 
     //Game Obj
+    private Sound sound;
     private Player player;
     private List<Bullet> bullets;
     private List<Monster> monster01;
-    private List<Monster> monster02;
-    private List<Monster> monster03;
+    //private List<Monster> monster02;
+    //private List<Monster> monster03;
     private List<Effect> boomEffects;
     private int score = 0;
 
@@ -100,6 +102,7 @@ public class PanelGame extends JComponent {
     }
 
     private void initObjectGame() {
+        sound = new Sound();
         player = new Player();
         player.changeLocation(150, 150);
         monster01 = new ArrayList<>();
@@ -185,6 +188,7 @@ public class PanelGame extends JComponent {
                                 } else {
                                     bullets.add(0, new Bullet(player.getX(), player.getY(), player.getAngle(), 20, 3f));
                                 }
+                                sound.soundShoot();
                             }
                             shotTime++;
                             if (shotTime == 15) {
@@ -289,6 +293,7 @@ public class PanelGame extends JComponent {
                     if (!monster.updateHP(bullet.getSize())) { //Test HP
                         score++;
                         monster01.remove(monster);
+                        sound.soundDestroy();
                         double x = monster.getX() + monster.MONSTER_SIZE / 2;
                         double y = monster.getX() + monster.MONSTER_SIZE / 2;
                         boomEffects.add(new Effect(x, y, 5, 5, 75, 0.05f, new Color(32, 178, 169)));
@@ -296,6 +301,8 @@ public class PanelGame extends JComponent {
                         boomEffects.add(new Effect(x, y, 10, 10, 100, 0.3f, new Color(203, 207, 105)));
                         boomEffects.add(new Effect(x, y, 10, 5, 100, 0.5f, new Color(255, 255, 70)));
                         boomEffects.add(new Effect(x, y, 10, 5, 150, 0.2f, new Color(255, 255, 255)));
+                    } else{
+                        sound.soundHit();
                     }
 
                     bullets.remove(bullet);
@@ -312,6 +319,7 @@ public class PanelGame extends JComponent {
                 double monterHp = monster.getHP();
                 if (!monster.updateHP(player.getHP())) {
                     monster01.remove(monster);
+                    sound.soundDestroy();
                     double x = monster.getX() + monster.MONSTER_SIZE / 2;
                     double y = monster.getX() + monster.MONSTER_SIZE / 2;
                     boomEffects.add(new Effect(x, y, 5, 5, 75, 0.05f, new Color(32, 178, 169)));
@@ -322,6 +330,7 @@ public class PanelGame extends JComponent {
                 }
                 if (!player.updateHP(monterHp)) {
                     player.setAlive(false);
+                    sound.soundDestroy();
                     double x = player.getX() + player.PLAYER_SIZE / 2;
                     double y = player.getX() + player.PLAYER_SIZE / 2;
                     boomEffects.add(new Effect(x, y, 5, 5, 75, 0.05f, new Color(32, 178, 169)));
