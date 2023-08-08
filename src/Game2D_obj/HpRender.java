@@ -7,7 +7,7 @@ import java.awt.geom.Rectangle2D;
 
 public class HpRender {
 
-    private final HP hp;
+    final HP hp;
 
     public HpRender(HP hp) {
         this.hp = hp;

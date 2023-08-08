@@ -8,12 +8,12 @@ public class Score {
     private int score;
     private String time;
 
-    public Score(String create_time, int phone_number, int score, String time) {
-        this.create_time = create_time;
-        this.phone_number = phone_number;
-        this.score = score;
-        this.time = time;
-    }
+//    public Score(String create_time, int phone_number, int score, String time) {
+//        this.create_time = create_time;
+//        this.phone_number = phone_number;
+//        this.score = score;
+//        this.time = time;
+//    }
 
     public String getCreate_time() {
         return create_time;

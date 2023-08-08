@@ -15,6 +15,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.geom.Area;
@@ -32,6 +34,10 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import javax.management.timer.Timer;
+import javax.swing.JFrame;
 
 public class PanelGame extends JComponent {
 
@@ -60,20 +66,21 @@ public class PanelGame extends JComponent {
     private int score = 0;
     private String playerName;
 
-    private Player currentPlayer; // Thông tin người chơi đang đăng nhập
+    private long startTimeMillis; // Biến để lưu thời điểm bắt đầu chơi
+
+    private Player loggedInPlayer; // Thông tin người chơi đang đăng nhập
     private int playerScore; // Điểm số của người chơi
 
-    public void setPlayerName(String playerName) {
-        this.playerName = playerName;
+    //tăng level game
+    private int currentLevel = 1; // Màn chơi hiện tại
+    private int monstersDefeated = 0; // Số lượng quái vật đã tiêu diệt
+
+    public void setLoggedInPlayer(Player player) {
+        loggedInPlayer = player;
     }
 
-    public PanelGame(Player currentPlayer) {
-        this.currentPlayer = currentPlayer;
-    }
-
-    public PanelGame(Player currentPlayer, int playerScore) { // Thêm tham số playerScore vào constructor
-        this.currentPlayer = currentPlayer;
-        this.playerScore = playerScore; // Lưu playerScore
+    public PanelGame(Player player) {
+        this.loggedInPlayer = player;
     }
 
     public void start() {
@@ -89,6 +96,8 @@ public class PanelGame extends JComponent {
         thread = new Thread(new Runnable() {
             @Override
             public void run() {
+                // Gán thời điểm bắt đầu khi chơi
+                startTimeMillis = System.currentTimeMillis();
                 while (start) {
                     long startTime = System.nanoTime();
                     drawBackground();
@@ -101,7 +110,19 @@ public class PanelGame extends JComponent {
                     }
                 }
             }
+
+            private String generateRandomName() {
+                String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                int nameLength = new Random().nextInt(8) + 1; // Từ 1 đến 8 ký tự
+                StringBuilder randomName = new StringBuilder();
+                for (int i = 0; i < nameLength; i++) {
+                    int randomIndex = new Random().nextInt(characters.length());
+                    randomName.append(characters.charAt(randomIndex));
+                }
+                return randomName.toString();
+            }
         });
+        setLoggedInPlayer(loggedInPlayer);
         initObjectGame();
         initKeyboard();
         initBullet();
@@ -110,18 +131,47 @@ public class PanelGame extends JComponent {
 
     //monster
     private void addMonster() {
+//        Random ran = new Random();
+//        int locationY = ran.nextInt(height - 50) + 25;
+//        Monster monster = new Monster();
+//        monster.changeLocation(0, locationY);
+//        monster.changeAngle(0);
+//        monster01.add(monster);
+//
+//        int locationY2 = ran.nextInt(height - 50) + 25;
+//        Monster monter2 = new Monster();
+//        monter2.changeLocation(width, locationY2);
+//        monter2.changeAngle(180);
+//        monster01.add(monter2);
+
         Random ran = new Random();
         int locationY = ran.nextInt(height - 50) + 25;
         Monster monster = new Monster();
+
+        // Tùy theo level, bạn có thể thay đổi thông số của quái vật
+        if (currentLevel == 2) {
+            // Thay đổi tốc độ di chuyển và máu của quái vật tại level 2
+            monster.changeSpeed(0.5f); // Điều chỉnh tốc độ di chuyển
+            monster.updateMaxHP(30); // Điều chỉnh máu tối đa
+        }
+
         monster.changeLocation(0, locationY);
         monster.changeAngle(0);
         monster01.add(monster);
 
         int locationY2 = ran.nextInt(height - 50) + 25;
-        Monster monter2 = new Monster();
-        monter2.changeLocation(width, locationY2);
-        monter2.changeAngle(180);
-        monster01.add(monter2);
+        Monster monster2 = new Monster();
+
+        // Tùy theo level, bạn có thể thay đổi thông số của quái vật
+        if (currentLevel == 2) {
+            // Thay đổi tốc độ di chuyển và máu của quái vật tại level 2
+            monster2.changeSpeed(0.5f); // Điều chỉnh tốc độ di chuyển
+            monster2.updateMaxHP(30); // Điều chỉnh máu tối đa
+        }
+
+        monster2.changeLocation(width, locationY2);
+        monster2.changeAngle(180);
+        monster01.add(monster2);
 
     }
 
@@ -130,8 +180,6 @@ public class PanelGame extends JComponent {
         player = new Player();
         player.changeLocation(150, 150);
         monster01 = new ArrayList<>();
-        //monster02 = new ArrayList<>();
-        //monster03 = new ArrayList<>();
         boomEffects = new ArrayList<>();
 
         new Thread(new Runnable() {
@@ -143,6 +191,7 @@ public class PanelGame extends JComponent {
                 }
             }
         }).start();
+
     }
 
     private void resetGame() {
@@ -249,19 +298,6 @@ public class PanelGame extends JComponent {
                             }
                         }
                     }
-//                    for(int i =0;i < monster02.size(); i++){
-//                        Monster monster2 = monster02.get(i);                        
-//                        if( monster2!= null){
-//                            monster2.update();
-//                        }
-//                    }
-//                    for(int i =0;i < monster03.size(); i++){
-//                        Monster monster3 = monster03.get(i);                        
-//                        if( monster3!= null){
-//                            monster3.update();
-//                        }
-//                    }
-
                     sleep(5);
                 }
             }
@@ -305,7 +341,36 @@ public class PanelGame extends JComponent {
         }).start();
     }
 
-    //check shooter monster
+//    //check shooter monster
+//    private void checkBullets(Bullet bullet) {
+//        for (int i = 0; i < monster01.size(); i++) {
+//            Monster monster = monster01.get(i);
+//            if (monster != null) {
+//                Area area = new Area(bullet.getShape());
+//                area.intersect(monster.getShape());
+//
+//                if (!area.isEmpty()) {
+//                    boomEffects.add(new Effect(bullet.getCenterX(), bullet.getCenterY(), 3, 5, 60, 0.5f, new Color(230, 207, 105)));
+//                    if (!monster.updateHP(bullet.getSize())) { //Test HP
+//                        score++;
+//                        monster01.remove(monster);
+//                        sound.soundDestroy();
+//                        double x = monster.getX() + monster.MONSTER_SIZE / 2;
+//                        double y = monster.getX() + monster.MONSTER_SIZE / 2;
+//                        boomEffects.add(new Effect(x, y, 5, 5, 75, 0.05f, new Color(32, 178, 169)));
+//                        boomEffects.add(new Effect(x, y, 5, 5, 75, 1, new Color(32, 178, 169)));
+//                        boomEffects.add(new Effect(x, y, 10, 10, 100, 0.3f, new Color(203, 207, 105)));
+//                        boomEffects.add(new Effect(x, y, 10, 5, 100, 0.5f, new Color(255, 255, 70)));
+//                        boomEffects.add(new Effect(x, y, 10, 5, 150, 0.2f, new Color(255, 255, 255)));
+//                    } else {
+//                        sound.soundHit();
+//                    }
+//
+//                    bullets.remove(bullet);
+//                }
+//            }
+//        }
+//    }
     private void checkBullets(Bullet bullet) {
         for (int i = 0; i < monster01.size(); i++) {
             Monster monster = monster01.get(i);
@@ -315,10 +380,24 @@ public class PanelGame extends JComponent {
 
                 if (!area.isEmpty()) {
                     boomEffects.add(new Effect(bullet.getCenterX(), bullet.getCenterY(), 3, 5, 60, 0.5f, new Color(230, 207, 105)));
-                    if (!monster.updateHP(bullet.getSize())) { //Test HP
+                    if (!monster.updateHP(bullet.getSize())) {
                         score++;
+                        monstersDefeated++;
+
+                        // Nếu số lượng quái vật đã tiêu diệt đạt đến một mốc nào đó, tăng level
+                        if (monstersDefeated >= 5) {
+                            currentLevel++;
+                            monstersDefeated = 0; // Đặt lại số lượng quái vật đã tiêu diệt
+                            // Xóa hết quái vật và đạn
+                            monster01.clear();
+                            bullets.clear();
+                            // Thêm quái vật mới ở level 2
+                            addMonsterLevel2();
+                        }
+
                         monster01.remove(monster);
                         sound.soundDestroy();
+
                         double x = monster.getX() + monster.MONSTER_SIZE / 2;
                         double y = monster.getX() + monster.MONSTER_SIZE / 2;
                         boomEffects.add(new Effect(x, y, 5, 5, 75, 0.05f, new Color(32, 178, 169)));
@@ -356,48 +435,55 @@ public class PanelGame extends JComponent {
                 if (!player.updateHP(monterHp)) {
                     player.setAlive(false);
                     sound.soundDestroy();
-                    // Lưu điểm số của người chơi đăng nhập vào cơ sở dữ liệu
-                    if (currentPlayer != null) {
-                        playerScore = score;
-//                        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/monster_shooter", "root", "")) {
-//                            String insertQuery = "INSERT INTO score (phone_number, score) VALUES (?, ?)";
-//                            try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
-//                                preparedStatement.setInt(1, currentPlayer.getPhone_number());
-//                                preparedStatement.setInt(2, playerScore);
-//                                preparedStatement.executeUpdate();
-//                            }
-//                        } catch (SQLException e) {
-//                            e.printStackTrace();
-//                        }
-                        Score score = new Score(
-                                new Timestamp(System.currentTimeMillis()).toString(),
-                                currentPlayer.getPhone_number(),
-                                playerScore,
-                                "0" // Thời gian chưa được xử lý ở mã của bạn, bạn cần cập nhật đúng giá trị thời gian ở đây
-                        );
-                        PlayerScore.addScore(score);
+//                    // Lưu điểm số của người chơi đăng nhập vào cơ sở dữ liệu
+//                    if (currentPlayer != null) {
+//                        playerScore = score;
+//                        Score score = new Score();
+//                        PlayerScore.addScore(score);
+//                        // Lưu thời gian chơi vào cơ sở dữ liệu
+//                        long elapsedTimeMillis = System.currentTimeMillis() - startTimeMillis;
+//                        // Định dạng thời gian thành chuỗi
+//                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//                        String formattedTime = dateFormat.format(new Date(elapsedTimeMillis));
 
-                        double x = player.getX() + player.PLAYER_SIZE / 2;
-                        double y = player.getX() + player.PLAYER_SIZE / 2;
-                        boomEffects.add(new Effect(x, y, 5, 5, 75, 0.05f, new Color(32, 178, 169)));
-                        boomEffects.add(new Effect(x, y, 5, 5, 75, 1, new Color(32, 178, 169)));
-                        boomEffects.add(new Effect(x, y, 10, 10, 100, 0.3f, new Color(203, 207, 105)));
-                        boomEffects.add(new Effect(x, y, 10, 5, 100, 0.5f, new Color(255, 255, 70)));
-                        boomEffects.add(new Effect(x, y, 10, 5, 150, 0.2f, new Color(255, 255, 255)));
-                    }
+                    double x = player.getX() + player.PLAYER_SIZE / 2;
+                    double y = player.getX() + player.PLAYER_SIZE / 2;
+                    boomEffects.add(new Effect(x, y, 5, 5, 75, 0.05f, new Color(32, 178, 169)));
+                    boomEffects.add(new Effect(x, y, 5, 5, 75, 1, new Color(32, 178, 169)));
+                    boomEffects.add(new Effect(x, y, 10, 10, 100, 0.3f, new Color(203, 207, 105)));
+                    boomEffects.add(new Effect(x, y, 10, 5, 100, 0.5f, new Color(255, 255, 70)));
+                    boomEffects.add(new Effect(x, y, 10, 5, 150, 0.2f, new Color(255, 255, 255)));
                 }
             }
         }
     }
-    //Game background
 
+    //Game background
     private void drawBackground() {
-        g2.setColor(new Color(30, 30, 30));
-        g2.fillRect(0, 0, width, height);
+//        // Load hình ảnh từ tệp ảnh, ví dụ:
+//        ImageIcon backgroundImage = new ImageIcon(getClass().getResource("/Game2D_image/background.png"));
+//        Image background = backgroundImage.getImage();
+//
+//        // Vẽ hình ảnh lên màn hình game
+//        g2.drawImage(background, 0, 0, width, height, this);
+
+        ImageIcon backgroundImage;
+        if (currentLevel == 1) {
+            backgroundImage = new ImageIcon(getClass().getResource("/Game2D_image/background.png"));
+        } else {
+            backgroundImage = new ImageIcon(getClass().getResource("/Game2D_image/background_2.png"));
+        }
+        Image background = backgroundImage.getImage();
+
+        // Vẽ hình ảnh lên màn hình game
+        g2.drawImage(background, 0, 0, width, height, this);
     }
 
     private void drawGame() {
-        
+
+        // Vẽ hình ảnh nền
+        drawBackground();
+
         if (player.isAlive()) {
             player.draw(g2);
         }
@@ -413,18 +499,6 @@ public class PanelGame extends JComponent {
                 monster.draw(g2);
             }
         }
-//        for(int i = 0; i<monster02.size();i++){
-//            Monster monster = monster02.get(i);
-//            if(monster != null){
-//                monster.draw(g2);
-//            }
-//        }
-//        for(int i = 0; i<monster03.size();i++){
-//            Monster monster = monster03.get(i);
-//            if(monster != null){
-//                monster.draw(g2);
-//            }
-//        }
 
         for (int i = 0; i < boomEffects.size(); i++) {
             Effect boomEffect = boomEffects.get(i);
@@ -440,18 +514,17 @@ public class PanelGame extends JComponent {
         // Vẽ tên người chơi bên trên bên trái màn hình
         g2.setColor(Color.white);
         g2.setFont(getFont().deriveFont(Font.BOLD, 15f));
-        FontMetrics fm = g2.getFontMetrics();
-        fm = g2.getFontMetrics();
-        String playerNameText = "Player: " + playerName;
-        g2.drawString(playerNameText, 10, 20); // Vị trí (10, 30) là một ví dụ, bạn có thể thay đổi vị trí tùy ý.
-        
-        
+        FontMetrics gm = g2.getFontMetrics();
+        gm = g2.getFontMetrics();
+        if (loggedInPlayer != null) {
+            g2.drawString("Player: " + loggedInPlayer.getName(), 10, 20);
+        }
 
         if (!player.isAlive()) {
             String text = "GAME OVER";
             String textKey = "Press key enter to Continue ...";
             g2.setFont(getFont().deriveFont(Font.BOLD, 50f));
-            //FontMetrics fm = g2.getFontMetrics();
+            FontMetrics fm = g2.getFontMetrics();
             Rectangle2D r2 = fm.getStringBounds(text, g2);
             double textWidth = r2.getWidth();
             double textHeight = r2.getHeight();
@@ -467,10 +540,6 @@ public class PanelGame extends JComponent {
             y = (height - textHeight) / 2;
             g2.drawString(textKey, (int) x, (int) y + fm.getAscent() + 50);
 
-            // Trước khi vẽ điểm số, vẽ một vùng màu trắng tạm thời
-//            g2.setColor(Color.white);
-//            g2.fillRect(0, 0, width, height);
-            // Vẽ điểm số
             String scoreText = "Your Score: " + score;
             g2.setFont(getFont().deriveFont(Font.BOLD, 20f));
             fm = g2.getFontMetrics();
@@ -500,5 +569,24 @@ public class PanelGame extends JComponent {
 
     public int getPlayerScore() {
         return playerScore;
+    }
+
+    private void addMonsterLevel2() {
+        Random ran = new Random();
+        int locationY = ran.nextInt(height - 50) + 25;
+        Monster monster = new Monster();
+        monster.changeSpeed(0.8f); // Điều chỉnh tốc độ di chuyển
+        monster.updateMaxHP(50); // Điều chỉnh máu tối đa
+        monster.changeLocation(0, locationY);
+        monster.changeAngle(0);
+        monster01.add(monster);
+
+        int locationY2 = ran.nextInt(height - 50) + 25;
+        Monster monster2 = new Monster();
+        monster2.changeSpeed(0.8f); // Điều chỉnh tốc độ di chuyển
+        monster2.updateMaxHP(50); // Điều chỉnh máu tối đa
+        monster2.changeLocation(width, locationY2);
+        monster2.changeAngle(180);
+        monster01.add(monster2);
     }
 }

@@ -160,7 +160,7 @@ public class PlayerScore {
             // Kết nối tới cơ sở dữ liệu và thực hiện truy vấn
             Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
 
-            String query = "SELECT * FROM players WHERE name = ?";
+            String query = "SELECT* FROM player WHERE phone_number = ?";
             statement = conn.prepareStatement(query);
             statement.setString(1, username);
             resultSet = statement.executeQuery();
@@ -170,7 +170,6 @@ public class PlayerScore {
                 player = new Player();
                 player.setName(resultSet.getString("name"));
                 player.setPhone_number(resultSet.getString("phone_number"));
-                player.setPassword(resultSet.getString("password"));
                 // ... Gán các thông tin khác tương ứng
             }
         } catch (SQLException e) {
@@ -191,7 +190,6 @@ public class PlayerScore {
                 e.printStackTrace();
             }
         }
-
         return player;
     }
 }

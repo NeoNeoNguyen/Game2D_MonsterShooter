@@ -12,6 +12,8 @@ import javax.swing.ImageIcon;
 
 public class Monster extends HpRender{
 
+    private final int maxHP;
+
     public Monster() {
         super(new HP(20, 20));
         this.mt1 = new ImageIcon(getClass().getResource("/Game2D_image/moster01.png")).getImage();
@@ -24,12 +26,14 @@ public class Monster extends HpRender{
         p.lineTo(MONSTER_SIZE, MONSTER_SIZE);
         p.lineTo(0, MONSTER_SIZE);
         monsterShap = new Area(p);
+        
+        this.maxHP = 20;
     }
 
     public static final double MONSTER_SIZE = 75;
     private double x;
     private double y;
-    private final float speed = 0.3f;
+    private float speed = 0.3f;
     private float angle = 0;
     private final Image mt1;
     //private final Image mt2;
@@ -106,5 +110,14 @@ public class Monster extends HpRender{
         } else {
             return true;
         }
+    }
+
+    public void changeSpeed(float newSpeed) {
+        this.speed = newSpeed;
+    }
+
+    public void updateMaxHP(int newMaxHP) {
+        //this.maxHP = newMaxHP;
+        hp.setCurrentHp(maxHP); // Đặt lại máu về tối đa mới
     }
 }
